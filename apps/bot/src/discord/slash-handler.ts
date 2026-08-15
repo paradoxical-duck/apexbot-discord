@@ -106,11 +106,11 @@ async function memberOption(interaction: ChatInputCommandInteraction): Promise<G
   return interaction.guild!.members.fetch(user.id);
 }
 
-async function manualNotice(interaction: ChatInputCommandInteraction, member: GuildMember, caseId: string, reason: string) {
+async function manualNotice(interaction: ChatInputCommandInteraction, member: GuildMember, caseId: string, reason: string, customText?: string) {
   const config = await store.getGuildConfig(interaction.guildId!, interaction.guild!.name);
-  const text = `Action taken in **${interaction.guild!.name}**. ${reason}\nCase #${caseId.slice(0, 8)}. Use \`/appeal submit\` to appeal.`;
+  const text = customText ?? `Action taken in **${interaction.guild!.name}**. ${reason}\nCase #${caseId.slice(0, 8)}. Use \`/appeal submit\` to appeal.`;
   if (config.dmOffenders) await member.send(text).catch(() => undefined);
-  if (config.pingOffenders && interaction.channel && 'send' in interaction.channel) await interaction.channel.send({ content: `<@${member.id}> Action has been taken. Case #${caseId.slice(0, 8)}.`, allowedMentions: { users: [member.id] } }).catch(() => undefined);
+  if (config.pingOffenders && interaction.channel && 'send' in interaction.channel) await interaction.channel.send({ content: `<@${member.id}> ${text}`, allowedMentions: { users: [member.id] } }).catch(() => undefined);
 }
 
 async function warn(interaction: ChatInputCommandInteraction) {
@@ -119,8 +119,9 @@ async function warn(interaction: ChatInputCommandInteraction) {
   const config = await store.getGuildConfig(interaction.guildId!, interaction.guild!.name);
   const punishments = config.progressionLevels.find((level) => level.level === after.pc)?.actions ?? config.progressionLevels.at(-1)?.actions ?? [{ type: 'warn' as const }];
   await applyPunishments(member, record.id, punishments, reason);
-  await manualNotice(interaction, member, record.id, reason);
-  await interaction.reply(`Warning recorded for ${member}. PC **${after.pc}** ladder actions applied. Case #${record.id.slice(0, 8)}.`);
+  const notice = `You were warned in **${interaction.guild!.name}**. PC **${after.pc}**. Case number **${record.id.slice(0, 8)}**.`;
+  await manualNotice(interaction, member, record.id, reason, notice);
+  await interaction.reply(`<@${member.id}> ${notice}`);
 }
 
 async function timeout(interaction: ChatInputCommandInteraction) {

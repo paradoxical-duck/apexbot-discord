@@ -31,11 +31,15 @@ export async function reviewMessage(message: MessageEnvelope, config: GuildConfi
     if (verdict) {
       const projectedPc = Math.max(0, current.pc + (verdict.harmful ? verdict.pcDelta : 0));
       const action = finalAction(verdict, config, projectedPc);
-      decision = {
+      const aiDecision: ModerationDecision = {
         action, severity: verdict.severity, confidence: verdict.confidence,
         categories: verdict.categories, pcDelta: action === 'allow' ? 0 : verdict.pcDelta,
         reason: verdict.reason, source: options.source ?? 'ai', aiAnalyzed: true, route,
       };
+      const deterministic = deterministicDecision(route, options.source);
+      decision = actionPriority(deterministic.action) > actionPriority(aiDecision.action)
+        ? { ...deterministic, aiAnalyzed: true }
+        : aiDecision;
     } else {
       decision = deterministicDecision(route, options.source);
       if (route.deterministicScore > 0) decision.reason += ' (AI unavailable; deterministic fail-safe used)';
@@ -87,6 +91,10 @@ export async function reviewMessage(message: MessageEnvelope, config: GuildConfi
     });
   }
   return { decision, caseId, pcBefore: current.pc, pcAfter: progression.pc, phase, punishments };
+}
+
+function actionPriority(action: ModerationAction): number {
+  return ['allow', 'report', 'verbal_warn', 'warn', 'delete', 'mute', 'timeout', 'kick', 'temp_ban', 'ban'].indexOf(action);
 }
 
 function representativeAction(punishments: ProgressionPunishment[], phase: ReviewResult['phase']): ModerationAction {

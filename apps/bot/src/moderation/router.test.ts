@@ -17,6 +17,12 @@ describe('resource-aware moderation router', () => {
     expect(result.deterministicAction).toBe('delete');
     expect(result.shouldCallAi).toBe(true);
   });
+  it('never lets a direct profane insult slip through', () => {
+    const result = routeMessage(message('fuck u'), { ...config, strictness: 'high' }, true);
+    expect(result.matchedTerms).toContain('fuck');
+    expect(result.deterministicAction).toBe('delete');
+    expect(result.deterministicScore).toBeGreaterThanOrEqual(7);
+  });
   it('forces ambiguous threats through AI', () => expect(routeMessage(message('I will kill you tomorrow'), config).shouldCallAi).toBe(true));
   it('flags executable attachments even with empty text', () => {
     const result = routeMessage(message('', { attachmentNames: ['totally-safe.scr'] }), config);
