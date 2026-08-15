@@ -1,0 +1,30 @@
+{
+  "name": "apexbot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ApexBot — AI moderation and FTC intelligence for Discord",
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "build": "npm run build -w @apexbot/shared && npm run build -w @apexbot/bot && npm run build -w @apexbot/dashboard",
+    "dev:bot": "npm run dev -w @apexbot/bot",
+    "dev:dashboard": "npm run dev -w @apexbot/dashboard",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "npm run typecheck -w @apexbot/shared && npm run typecheck -w @apexbot/bot && npm run typecheck -w @apexbot/dashboard",
+    "deploy:commands": "npm run deploy:commands -w @apexbot/bot",
+    "firebase:emulators": "firebase emulators:start",
+    "deploy:firebase": "npm run build && firebase deploy --only hosting,firestore",
+    "deploy:cloudrun": "powershell -ExecutionPolicy Bypass -File scripts/deploy-cloudrun.ps1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "@types/node": "^24.2.1",
+    "eslint": "^9.33.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.1",
+    "vitest": "^3.2.4"
+  },
+  "engines": { "node": ">=22" }
+}

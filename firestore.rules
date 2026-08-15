@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function guildClaim(guildId) {
+      return signedIn() && request.auth.token.guilds != null && guildId in request.auth.token.guilds;
+    }
+    match /guilds/{guildId} {
+      allow read: if guildClaim(guildId);
+      allow write: if false;
+      match /{document=**} {
+        allow read: if guildClaim(guildId);
+        allow write: if false;
+      }
+    }
+    match /users/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow write: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
