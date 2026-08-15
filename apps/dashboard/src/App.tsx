@@ -10,6 +10,7 @@ import {
   type ProgressionLevel, type ProgressionPunishment, type PunishmentType, type Strictness,
 } from '@apexbot/shared';
 import { api, type Guild } from './api';
+import apexLogo from '../../../assets/apexbot-icon.png';
 
 type View = 'automod' | 'progression' | 'cases' | 'logging' | 'bot' | 'commands';
 type Resources = { channels: Array<{ id: string; name: string }>; roles: Array<{ id: string; name: string; color: string }> };
@@ -44,7 +45,7 @@ export default function App() {
 
 function SignIn() { return <div className="signin">
   <header><Logo /><span>CONTROL SURFACE / 01</span></header>
-  <main><section className="signin-copy"><p className="eyebrow">ApexBot server control</p><h1>KEEP<br />ORDER<span>.</span></h1><p>Set moderation rules, review cases, and control every action from one place.</p><a href="/api/auth/discord"><DiscordMark />Sign in with Discord<ArrowRight /></a><small>Manage Server permission required.</small></section><section className="signin-mark" aria-hidden="true"><div className="red-plane" /><div className="wire" /><b>A</b><span>APEX<br />MODERATION</span></section></main>
+  <main><section className="signin-copy"><p className="eyebrow">ApexBot server control</p><h1>KEEP<br />ORDER<span>.</span></h1><p>Set moderation rules, review cases, and control every action from one place.</p><a href="/api/auth/discord"><DiscordMark />Sign in with Discord<ArrowRight /></a><small>Manage Server permission required.</small></section><section className="signin-mark" aria-hidden="true"><div className="red-plane" /><div className="wire" /><img src={apexLogo} alt="" /><span>APEX<br />MODERATION</span></section></main>
   <footer><span>APEXBOT</span><span>DISCORD / MODERATION / FTC</span></footer>
 </div>; }
 
@@ -96,7 +97,7 @@ function Dropdown({ value, options, placeholder, onChange, compact = false }: { 
 function SearchBox({ value, set, placeholder }: { value: string; set: (value: string) => void; placeholder: string }) { return <div className="search-box"><Search /><input value={value} placeholder={placeholder} onChange={(event) => set(event.target.value)} /></div>; }
 function Empty({ icon, title, text }: { icon: ReactNode; title: string; text: string }) { return <div className="empty">{icon}<b>{title}</b><span>{text}</span></div>; }
 function Loading({ compact = false }: { compact?: boolean }) { return <div className={`loading ${compact ? 'compact' : ''}`}><LoaderCircle /><span>Loading</span></div>; }
-function Logo() { return <div className="logo"><span>A</span><b>APEXBOT</b></div>; }
+function Logo() { return <div className="logo"><img src={apexLogo} alt="ApexBot" /><b>APEXBOT</b></div>; }
 function DiscordMark() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.5 5.34A17.2 17.2 0 0 0 15.23 4l-.53 1.08a15.7 15.7 0 0 0-5.4 0L8.77 4A17.2 17.2 0 0 0 4.5 5.34C1.8 9.36 1.07 13.28 1.43 17.15a17.4 17.4 0 0 0 5.24 2.65l1.27-1.74a10.5 10.5 0 0 1-1.99-.95l.49-.38a12.3 12.3 0 0 0 11.12 0l.49.38c-.64.38-1.3.7-2 .95l1.28 1.74a17.4 17.4 0 0 0 5.24-2.65c.43-4.49-.74-8.37-3.07-11.81ZM8.25 14.75c-1.02 0-1.85-.94-1.85-2.1 0-1.15.81-2.09 1.85-2.09s1.87.95 1.85 2.09c0 1.16-.82 2.1-1.85 2.1Zm7.5 0c-1.02 0-1.85-.94-1.85-2.1 0-1.15.81-2.09 1.85-2.09s1.87.95 1.85 2.09c0 1.16-.81 2.1-1.85 2.1Z" /></svg>; }
 function channelOptions(resources: Resources): Option[] { return resources.channels.map((item) => ({ value: item.id, label: `#${item.name}` })); }
 function relative(value: string) { const s = Math.max(0, Math.floor((Date.now() - Date.parse(value)) / 1000)); return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.floor(s / 60)}m ago` : s < 86400 ? `${Math.floor(s / 3600)}h ago` : `${Math.floor(s / 86400)}d ago`; }

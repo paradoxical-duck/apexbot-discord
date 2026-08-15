@@ -43,6 +43,7 @@ function decodeSession(value?: string): Session | null {
   return session.exp > Date.now() ? session : null;
 }
 function sessionFor(request: FastifyRequest): Session | null { return decodeSession(request.cookies.apex_session); }
+function publicOrigin(request: FastifyRequest): string { return `${request.protocol}://${request.host}`; }
 function requireGuild(request: FastifyRequest, guildId: string): Session {
   const session = sessionFor(request); if (!session) throw Object.assign(new Error('Authentication required.'), { statusCode: 401 });
   if (!session.guilds.includes(guildId)) throw Object.assign(new Error('Manage Server permission required.'), { statusCode: 403 });
@@ -56,18 +57,20 @@ export async function createApiServer() {
   await app.register(fastifyStatic, { root: fileURLToPath(new URL('../../../dashboard/dist/', import.meta.url)), wildcard: false });
 
   app.get('/api/health', async () => ({ status: 'ok', discord: discordClient.isReady(), guilds: discordClient.guilds.cache.size, timestamp: new Date().toISOString() }));
-  app.get('/api/auth/discord', async (_request, reply) => {
+  app.get('/api/auth/discord', async (request, reply) => {
     if (!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET) return reply.code(503).send({ error: 'Discord OAuth is not configured.' });
     const state = randomBytes(24).toString('base64url');
+    const redirectUri = `${publicOrigin(request)}/api/auth/discord/callback`;
     reply.setCookie('oauth_state', state, { httpOnly: true, secure: env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 600 });
     const url = new URL('https://discord.com/oauth2/authorize');
-    url.search = new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID, redirect_uri: env.DISCORD_REDIRECT_URI, response_type: 'code', scope: 'identify guilds', state }).toString();
+    url.search = new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID, redirect_uri: redirectUri, response_type: 'code', scope: 'identify guilds', state }).toString();
     return reply.redirect(url.toString());
   });
   app.get('/api/auth/discord/callback', async (request, reply) => {
     const query = z.object({ code: z.string(), state: z.string() }).parse(request.query);
     if (!request.cookies.oauth_state || query.state !== request.cookies.oauth_state) return reply.code(400).send('Invalid OAuth state.');
-    const tokenResponse = await fetch('https://discord.com/api/v10/oauth2/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID!, client_secret: env.DISCORD_CLIENT_SECRET!, grant_type: 'authorization_code', code: query.code, redirect_uri: env.DISCORD_REDIRECT_URI }) });
+    const redirectUri = `${publicOrigin(request)}/api/auth/discord/callback`;
+    const tokenResponse = await fetch('https://discord.com/api/v10/oauth2/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID!, client_secret: env.DISCORD_CLIENT_SECRET!, grant_type: 'authorization_code', code: query.code, redirect_uri: redirectUri }) });
     if (!tokenResponse.ok) return reply.code(502).send('Discord token exchange failed.');
     const token = await tokenResponse.json() as { access_token: string };
     const headers = { authorization: `Bearer ${token.access_token}` };
@@ -77,7 +80,7 @@ export async function createApiServer() {
     const allowed = oauthGuilds.filter((g) => g.owner || (BigInt(g.permissions) & 0x20n) === 0x20n || (BigInt(g.permissions) & 0x8n) === 0x8n).filter((g) => discordClient.guilds.cache.has(g.id)).map((g) => g.id);
     reply.clearCookie('oauth_state', { path: '/' });
     reply.setCookie('apex_session', encodeSession({ uid: user.id, username: user.username, guilds: allowed, exp: Date.now() + 7 * 86_400_000 }), { httpOnly: true, secure: env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 7 * 86_400 });
-    return reply.redirect(`${env.DASHBOARD_URL}/app`);
+    return reply.redirect('/app');
   });
   app.post('/api/auth/logout', async (_request, reply) => { reply.clearCookie('apex_session', { path: '/' }); return { ok: true }; });
   app.get('/api/auth/session', async (request, reply) => {

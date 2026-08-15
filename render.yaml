@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: apexbot
+    name: apexbot-5lco
     runtime: docker
     plan: free
     region: singapore
@@ -31,6 +31,6 @@ services:
       - key: COOKIE_SECRET
         generateValue: true
       - key: DASHBOARD_URL
-        value: https://apexbot.onrender.com
+        value: https://apexbot-5lco.onrender.com
       - key: DISCORD_REDIRECT_URI
-        value: https://apexbot.onrender.com/api/auth/discord/callback
+        value: https://apexbot-5lco.onrender.com/api/auth/discord/callback
