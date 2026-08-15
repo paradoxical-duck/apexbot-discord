@@ -112,9 +112,8 @@ async function memberOption(interaction: ChatInputCommandInteraction): Promise<G
   return interaction.guild!.members.fetch(user.id);
 }
 
-async function manualNotice(interaction: ChatInputCommandInteraction, member: GuildMember, caseId: string, reason: string, customText?: string) {
+async function manualNotice(interaction: ChatInputCommandInteraction, member: GuildMember, text: string) {
   const config = await store.getGuildConfig(interaction.guildId!, interaction.guild!.name);
-  const text = customText ?? `Action taken in **${interaction.guild!.name}**. ${reason}\nCase #${caseId.slice(0, 8)}. Use \`/appeal submit\` to appeal.`;
   if (config.dmOffenders) await member.send(text).catch(() => undefined);
   if (config.pingOffenders && interaction.channel && 'send' in interaction.channel) await interaction.channel.send({ content: `<@${member.id}> ${text}`, allowedMentions: { users: [member.id] } }).catch(() => undefined);
 }
@@ -126,7 +125,7 @@ async function warn(interaction: ChatInputCommandInteraction) {
   const punishments = config.progressionLevels.find((level) => level.level === after.pc)?.actions ?? config.progressionLevels.at(-1)?.actions ?? [{ type: 'warn' as const }];
   await applyPunishments(member, record.id, punishments, reason);
   const notice = `You were warned in **${interaction.guild!.name}**. PC **${after.pc}**. Case number **${record.id.slice(0, 8)}**.`;
-  await manualNotice(interaction, member, record.id, reason, notice);
+  await manualNotice(interaction, member, notice);
   await interaction.reply(`<@${member.id}> ${notice}`);
 }
 
@@ -138,7 +137,7 @@ async function timeout(interaction: ChatInputCommandInteraction) {
   const { after, record } = await manualRecord(interaction, member, 'mute', reason, 2);
   const punishment: ProgressionPunishment = { type: 'mute', durationMinutes: duration == null ? null : duration / 60_000 };
   await applyPunishments(member, record.id, [punishment], reason);
-  await manualNotice(interaction, member, record.id, reason);
+  await manualNotice(interaction, member, `You were muted in **${interaction.guild!.name}**. PC **${after.pc}**. Case number **${record.id.slice(0, 8)}**.`);
   await interaction.reply(`Muted ${member} ${raw ? `for **${raw}**` : 'indefinitely'}. PC **${after.pc}**. Case #${record.id.slice(0, 8)}.`);
 }
 
@@ -151,14 +150,14 @@ async function unmute(interaction: ChatInputCommandInteraction) {
 
 async function kick(interaction: ChatInputCommandInteraction) {
   const member = await memberOption(interaction); const reason = interaction.options.getString('reason') ?? 'No reason provided';
-  await member.kick(reason); const { after, record } = await manualRecord(interaction, member, 'kick', reason, 3); await manualNotice(interaction, member, record.id, reason);
+  await member.kick(reason); const { after, record } = await manualRecord(interaction, member, 'kick', reason, 3); await manualNotice(interaction, member, `You were kicked from **${interaction.guild!.name}**. PC **${after.pc}**. Case number **${record.id.slice(0, 8)}**.`);
   await interaction.reply(`Kicked **${member.user.tag}** · PC **${after.pc}** · case **${record.id.slice(0, 8)}**`);
 }
 
 async function ban(interaction: ChatInputCommandInteraction) {
   const member = await memberOption(interaction); const reason = interaction.options.getString('reason') ?? 'No reason provided';
   const days = interaction.options.getInteger('delete_days') ?? 0;
-  await member.ban({ reason, deleteMessageSeconds: days * 86_400 }); const { after, record } = await manualRecord(interaction, member, 'ban', reason, 4); await manualNotice(interaction, member, record.id, reason);
+  await member.ban({ reason, deleteMessageSeconds: days * 86_400 }); const { after, record } = await manualRecord(interaction, member, 'ban', reason, 4); await manualNotice(interaction, member, `You were banned from **${interaction.guild!.name}**. PC **${after.pc}**. Case number **${record.id.slice(0, 8)}**.`);
   await interaction.reply(`Banned **${member.user.tag}** · PC **${after.pc}** · case **${record.id.slice(0, 8)}**`);
 }
 
