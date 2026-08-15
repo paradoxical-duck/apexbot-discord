@@ -10,6 +10,7 @@ const schema = z.object({
   DISCORD_REDIRECT_URI: z.string().url().default('http://localhost:8080/api/auth/discord/callback'),
   DASHBOARD_URL: z.string().url().default('http://localhost:5173'),
   API_BASE_URL: z.string().url().default('http://localhost:8080'),
+  OAUTH_BRIDGE_TARGET: z.string().url().optional(),
   COOKIE_SECRET: z.string().min(16).default('development-only-change-me-now'),
   FIREBASE_PROJECT_ID: z.string().optional(),
   FIREBASE_SERVICE_ACCOUNT_JSON: z.string().optional(),

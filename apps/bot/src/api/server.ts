@@ -43,7 +43,6 @@ function decodeSession(value?: string): Session | null {
   return session.exp > Date.now() ? session : null;
 }
 function sessionFor(request: FastifyRequest): Session | null { return decodeSession(request.cookies.apex_session); }
-function publicOrigin(request: FastifyRequest): string { return `${request.protocol}://${request.host}`; }
 function requireGuild(request: FastifyRequest, guildId: string): Session {
   const session = sessionFor(request); if (!session) throw Object.assign(new Error('Authentication required.'), { statusCode: 401 });
   if (!session.guilds.includes(guildId)) throw Object.assign(new Error('Manage Server permission required.'), { statusCode: 403 });
@@ -57,20 +56,24 @@ export async function createApiServer() {
   await app.register(fastifyStatic, { root: fileURLToPath(new URL('../../../dashboard/dist/', import.meta.url)), wildcard: false });
 
   app.get('/api/health', async () => ({ status: 'ok', discord: discordClient.isReady(), guilds: discordClient.guilds.cache.size, timestamp: new Date().toISOString() }));
-  app.get('/api/auth/discord', async (request, reply) => {
+  app.get('/callback', async (request, reply) => {
+    if (!env.OAUTH_BRIDGE_TARGET) return reply.code(404).send({ error: 'Not found.' });
+    const target = new URL('/api/auth/discord/callback', env.OAUTH_BRIDGE_TARGET);
+    target.search = new URL(request.url, 'https://oauth-bridge.invalid').search;
+    return reply.redirect(target.toString());
+  });
+  app.get('/api/auth/discord', async (_request, reply) => {
     if (!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET) return reply.code(503).send({ error: 'Discord OAuth is not configured.' });
     const state = randomBytes(24).toString('base64url');
-    const redirectUri = `${publicOrigin(request)}/api/auth/discord/callback`;
     reply.setCookie('oauth_state', state, { httpOnly: true, secure: env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 600 });
     const url = new URL('https://discord.com/oauth2/authorize');
-    url.search = new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID, redirect_uri: redirectUri, response_type: 'code', scope: 'identify guilds', state }).toString();
+    url.search = new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID, redirect_uri: env.DISCORD_REDIRECT_URI, response_type: 'code', scope: 'identify guilds', state }).toString();
     return reply.redirect(url.toString());
   });
   app.get('/api/auth/discord/callback', async (request, reply) => {
     const query = z.object({ code: z.string(), state: z.string() }).parse(request.query);
     if (!request.cookies.oauth_state || query.state !== request.cookies.oauth_state) return reply.code(400).send('Invalid OAuth state.');
-    const redirectUri = `${publicOrigin(request)}/api/auth/discord/callback`;
-    const tokenResponse = await fetch('https://discord.com/api/v10/oauth2/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID!, client_secret: env.DISCORD_CLIENT_SECRET!, grant_type: 'authorization_code', code: query.code, redirect_uri: redirectUri }) });
+    const tokenResponse = await fetch('https://discord.com/api/v10/oauth2/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: env.DISCORD_CLIENT_ID!, client_secret: env.DISCORD_CLIENT_SECRET!, grant_type: 'authorization_code', code: query.code, redirect_uri: env.DISCORD_REDIRECT_URI }) });
     if (!tokenResponse.ok) return reply.code(502).send('Discord token exchange failed.');
     const token = await tokenResponse.json() as { access_token: string };
     const headers = { authorization: `Bearer ${token.access_token}` };
