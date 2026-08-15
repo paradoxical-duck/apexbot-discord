@@ -66,9 +66,9 @@ export async function deliverModerationResult(client: Client, message: Message, 
   }
 
   if (decision.action !== 'report' && caseNumber) {
-    const notice = `Action taken in **${message.guild?.name ?? 'this server'}**. ${decision.reason}\nCase #${caseNumber}. Use \`/appeal submit\` with this case number to appeal.`;
+    const notice = `You were ${memberAction(decision.action)} in **${message.guild?.name ?? 'this server'}**. PC **${result.pcAfter}**. Case number **${caseNumber}**.`;
     if (config.dmOffenders) await message.author.send(notice).catch(() => undefined);
-    if ((config.pingOffenders || result.phase === 'verbal') && 'send' in message.channel) await message.channel.send({ content: `<@${message.author.id}> ${result.phase === 'verbal' ? 'This is a verbal warning.' : 'Action has been taken.'} Case #${caseNumber}.`, allowedMentions: { users: [message.author.id] } }).catch(() => undefined);
+    if ((config.pingOffenders || result.phase === 'verbal') && 'send' in message.channel) await message.channel.send({ content: `<@${message.author.id}> ${notice}`, allowedMentions: { users: [message.author.id] } }).catch(() => undefined);
   }
 
   const destinationIds = new Set([config.loggingChannelId, decision.action === 'report' ? config.moderatorChannelId : null].filter((item): item is string => Boolean(item)));
@@ -76,6 +76,10 @@ export async function deliverModerationResult(client: Client, message: Message, 
     const channel = await client.channels.fetch(destinationId).catch(() => null);
     if (channel?.isTextBased() && !channel.isDMBased()) await channel.send({ embeds: [embed] }).catch((error) => logger.warn({ error }, 'Could not send moderation log'));
   }
+}
+
+function memberAction(action: ReviewResult['decision']['action']): string {
+  return ({ report: 'reported', verbal_warn: 'warned', warn: 'warned', delete: 'warned', mute: 'muted', timeout: 'muted', kick: 'kicked', temp_ban: 'temporarily banned', ban: 'banned', allow: 'warned' } as const)[action];
 }
 
 function actionLabel(action: ReviewResult['decision']['action']): string {

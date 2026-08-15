@@ -1,4 +1,4 @@
-import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+import { ChannelType, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 
 const mod = PermissionFlagsBits.ModerateMembers;
 
@@ -53,6 +53,8 @@ export const commandDefinitions = [
     .addUserOption((o) => o.setName('member').setDescription('Member').setRequired(true)),
   new SlashCommandBuilder().setName('intensity').setDescription('Set moderation strictness').setDefaultMemberPermissions(mod)
     .addStringOption((o) => o.setName('level').setDescription('Moderation intensity').setRequired(true).addChoices({ name: 'Low', value: 'low' }, { name: 'Medium', value: 'medium' }, { name: 'High', value: 'high' })),
+  new SlashCommandBuilder().setName('logging').setDescription('Set the channel for all ApexBot logs').setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+    .addChannelOption((o) => o.setName('channel').setDescription('Channel for reports, cases, and server logs').setRequired(true).addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)),
   new SlashCommandBuilder().setName('appeal').setDescription('Submit or resolve a moderation appeal')
     .addSubcommand((s) => s.setName('submit').setDescription('Appeal one of your cases').addStringOption((o) => o.setName('case').setDescription('Case number').setRequired(true)).addStringOption((o) => o.setName('reason').setDescription('Why this action should be reconsidered').setMaxLength(800)))
     .addSubcommand((s) => s.setName('approve').setDescription('Approve an appeal').addStringOption((o) => o.setName('case').setDescription('Case number').setRequired(true)).addStringOption((o) => o.setName('note').setDescription('Moderator note').setMaxLength(500)))

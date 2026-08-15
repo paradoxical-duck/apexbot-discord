@@ -88,6 +88,12 @@ export async function handleSlash(interaction: ChatInputCommandInteraction): Pro
         await store.createLog({ guildId: interaction.guildId!, type: 'config_intensity', actorId: interaction.user.id, targetId: null, channelId: interaction.channelId, messageId: null, summary: `Moderation intensity set to ${strictness}`, metadata: { strictness } });
         return void await interaction.reply(`Moderation intensity set to **${strictness}**.`);
       }
+      case 'logging': {
+        const channel = interaction.options.getChannel('channel', true);
+        await store.updateGuildConfig(interaction.guildId!, { loggingChannelId: channel.id });
+        await store.createLog({ guildId: interaction.guildId!, type: 'config_logging', actorId: interaction.user.id, targetId: null, channelId: channel.id, messageId: null, summary: `Logging channel set to #${channel.name}`, metadata: { loggingChannelId: channel.id } });
+        return void await interaction.reply(`Logs will be sent to <#${channel.id}>.`);
+      }
       case 'appeal': return void await appeal(interaction, config.appealCooldownMinutes);
       case 'prefix': return void await prefix(interaction, config.prefixes);
       case 'topr': return void await topr(interaction);

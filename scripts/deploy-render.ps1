@@ -37,7 +37,7 @@ try {
     --env-var 'NODE_ENV=production' `
     --env-var 'PORT=8080' `
     --env-var 'AI_PROVIDER=gemini' `
-    --env-var 'GEMINI_MODEL=gemini-2.5-flash' `
+    --env-var 'GEMINI_MODEL=gemini-flash-latest' `
     --env-var 'DISCORD_CLIENT_ID=1501215133345648801' `
     --env-var "DISCORD_TOKEN=$discordToken" `
     --env-var "GEMINI_API_KEY=$geminiKey" `

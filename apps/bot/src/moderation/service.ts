@@ -42,7 +42,6 @@ export async function reviewMessage(message: MessageEnvelope, config: GuildConfi
         : aiDecision;
     } else {
       decision = deterministicDecision(route, options.source);
-      if (route.deterministicScore > 0) decision.reason += ' (AI unavailable; deterministic fail-safe used)';
     }
   } else decision = deterministicDecision(route, options.source);
 
@@ -113,7 +112,17 @@ function deterministicDecision(route: ReturnType<typeof routeMessage>, source?: 
     confidence: actionable ? Math.min(0.99, 0.62 + route.deterministicScore * 0.03) : 1,
     categories: route.flags,
     pcDelta: severity === 'critical' ? 4 : severity === 'high' ? 3 : severity === 'medium' ? 2 : actionable ? 1 : 0,
-    reason: actionable ? `Deterministic safety match: ${route.flags.join(', ')}` : 'No actionable safety signal',
+    reason: actionable ? readableReason(route.flags) : 'No action needed',
     source: source ?? 'deterministic', aiAnalyzed: false, route,
   };
+}
+
+function readableReason(flags: string[]): string {
+  if (flags.includes('hate-term')) return 'Hateful language';
+  if (flags.includes('blocked-term')) return 'Blocked language';
+  if (flags.includes('threat-language')) return 'Threatening language';
+  if (flags.includes('scam-language') || flags.includes('lookalike-domain')) return 'Possible scam';
+  if (flags.some((flag) => ['repetition-spam', 'repeat-flood', 'mass-mentions'].includes(flag))) return 'Spam';
+  if (flags.includes('dangerous-attachment')) return 'Unsafe attachment';
+  return 'Server rule violation';
 }

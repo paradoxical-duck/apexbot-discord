@@ -26,6 +26,7 @@ export const COMMAND_CATALOG: CommandHelp[] = [
   { name: 'history', category: 'moderation', description: 'View a member moderation history.', moderatorOnly: true, prefixSyntax: 'history @member' },
   { name: 'appeal', category: 'moderation', description: 'Submit or resolve a case appeal.', prefixSyntax: 'appeal [approve|deny] <case> [reason]' },
   { name: 'intensity', category: 'configuration', description: 'Set low, medium, or high moderation intensity.', moderatorOnly: true, prefixSyntax: 'intensity <low|medium|high>' },
+  { name: 'logging', category: 'configuration', description: 'Set the channel for every report and moderation log.', moderatorOnly: true, prefixSyntax: 'logging #channel' },
   { name: 'prefix', category: 'configuration', description: 'List, add, or remove command prefixes.', moderatorOnly: true, prefixSyntax: 'prefix <list|add|remove> [prefix]' },
   { name: '@ApexBot help', category: 'utility', description: 'Mention ApexBot to show every command.', prefixSyntax: '@ApexBot help' },
   { name: '@ApexBot prompt', category: 'utility', description: 'Mention ApexBot with a message to ask the AI.', prefixSyntax: '@ApexBot <message>' },

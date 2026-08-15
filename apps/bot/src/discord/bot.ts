@@ -95,7 +95,8 @@ discordClient.on(Events.MessageCreate, async (message) => {
   try {
     const config = await guildConfig(message.guild.id, message.guild.name);
     if (await handlePrefix(message, config)) return;
-    const isMentionReport = message.mentions.has(discordClient.user!) && Boolean(message.reference?.messageId);
+    const explicitBotMention = new RegExp(`<@!?${discordClient.user!.id}>`).test(message.content);
+    const isMentionReport = explicitBotMention && Boolean(message.reference?.messageId);
     if (isMentionReport) {
       const target = await findMessage(message.guild, message.reference!.messageId!, message.channel);
       if (!target) return void await message.reply('I could not resolve the replied message.');
@@ -105,7 +106,7 @@ discordClient.on(Events.MessageCreate, async (message) => {
       else await message.reply(`Action has been taken. Case #${result.caseId?.slice(0, 8)}.`);
       return;
     }
-    if (message.mentions.has(discordClient.user!)) {
+    if (explicitBotMention) {
       const prompt = message.content.replace(new RegExp(`<@!?${discordClient.user!.id}>`, 'g'), '').trim();
       if (!prompt || /^(?:help|commands|command list)$/i.test(prompt)) {
         const embed = new EmbedBuilder().setColor(0xe21f3f).setTitle('ApexBot commands').setDescription(COMMAND_CATALOG.map((item) => `**/${item.name}** — ${item.description}`).join('\n').slice(0, 4_000));

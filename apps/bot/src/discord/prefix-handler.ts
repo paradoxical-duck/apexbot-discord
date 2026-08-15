@@ -23,7 +23,7 @@ export async function handlePrefix(message: Message, config: GuildConfig): Promi
   if (!prefix) return false;
   const parts = tokenize(message.content.slice(prefix.length).trim()); const command = parts.shift()?.toLowerCase();
   if (!command) return false;
-  const modOnly = ['mode', 'intensity', 'warn', 'mute', 'timeout', 'unmute', 'kick', 'ban', 'unban', 'purge', 'slowmode', 'lock', 'unlock', 'pc', 'history', 'prefix'];
+  const modOnly = ['mode', 'intensity', 'logging', 'warn', 'mute', 'timeout', 'unmute', 'kick', 'ban', 'unban', 'purge', 'slowmode', 'lock', 'unlock', 'pc', 'history', 'prefix'];
   if (modOnly.includes(command) && !isModerator(message.member)) { await message.reply('You need moderation permissions for that command.'); return true; }
   try {
     if (command === 'ping') { await message.reply(`ApexBot is online. Gateway ${Math.round(message.client.ws.ping)}ms. ${config.mode} mode, ${config.strictness} intensity.`); return true; }
@@ -39,6 +39,13 @@ export async function handlePrefix(message: Message, config: GuildConfig): Promi
       const strictness = parts[0]?.toLowerCase() as Strictness;
       if (!['low', 'medium', 'high'].includes(strictness)) throw new Error(`Usage: ${prefix}intensity <low|medium|high>`);
       await store.updateGuildConfig(message.guildId!, { strictness }); await store.createLog({ guildId: message.guildId!, type: 'config_intensity', actorId: message.author.id, targetId: null, channelId: message.channelId, messageId: message.id, summary: `Moderation intensity set to ${strictness}`, metadata: { strictness } }); await message.reply(`Moderation intensity set to **${strictness}**.`); return true;
+    }
+    if (command === 'logging') {
+      const channelId = idFrom(parts[0]); if (!channelId) throw new Error(`Usage: ${prefix}logging #channel`);
+      const channel = await message.guild!.channels.fetch(channelId); if (!channel?.isTextBased()) throw new Error('Choose a text channel.');
+      await store.updateGuildConfig(message.guildId!, { loggingChannelId: channelId });
+      await store.createLog({ guildId: message.guildId!, type: 'config_logging', actorId: message.author.id, targetId: null, channelId, messageId: message.id, summary: `Logging channel set to #${'name' in channel ? channel.name : channelId}`, metadata: { loggingChannelId: channelId } });
+      await message.reply(`Logs will be sent to <#${channelId}>.`); return true;
     }
     if (command === 'report') {
       const raw = parts[0] ?? message.reference?.messageId; if (!raw) throw new Error(`Reply to a message or use ${prefix}report <message-id>.`);
