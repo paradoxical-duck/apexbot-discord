@@ -99,7 +99,6 @@ export async function createApiServer() {
     return { channels: guild?.channels.cache.filter((c) => c.isTextBased() && !c.isDMBased()).map((c) => ({ id: c.id, name: c.name })) ?? [], roles: guild?.roles.cache.filter((r) => !r.managed && r.id !== guild.id).map((r) => ({ id: r.id, name: r.name, color: r.hexColor })) ?? [] };
   });
 
-  app.get('/', async (_request, reply) => reply.sendFile('index.html'));
   app.get('/*', async (request, reply) => request.url.startsWith('/api/') ? reply.code(404).send({ error: 'Not found.' }) : reply.sendFile('index.html'));
 
   return app;
